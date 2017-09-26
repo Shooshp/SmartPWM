@@ -3,20 +3,20 @@
 FILE*usart;
 
 void UASRT_INIT()
-{
+{	
 	UART_DDR  |=
 				(
 				(1<<UART_TX_PIN)|
 				(1<<UART_EN_PIN)|
-				(1<<PRT_RST_PIN)|
-				(1<<PWR_CTR_PIN)
+				(1<<PRT_RST_PIN)| //Защита от перенапруги
+				(1<<PWR_CTR_PIN)  //Включение ДЦ ДЦ
 				);
 
 	UART_PORT |=
 				(
 				(1<<UART_TX_PIN)|
 				(1<<UART_EN_PIN)|
-				(1<<PWR_CTR_PIN)
+				(1<<PWR_CTR_PIN) //Включение ДЦ ДЦ
 				);
 
 	UART_PORT &=~(1<<PRT_RST_PIN);
@@ -24,13 +24,13 @@ void UASRT_INIT()
 	UART_DDR &=~(1<<UART_RX_PIN);
 
 	UBRRH=0x00;
-	UBRRL=0x22;									//USART 28.8K bod
+	UBRRL=0x33;		//Для внутренних 8 МГц часов это 9600
 
 	UCSRC=
 	(
-		 (0<<USBS) |
-		 (1<<UCSZ0)|
-		 (1<<UCSZ1)|
+		 (0<<USBS) | // Один стоповый бит
+		 (1<<UCSZ0)| // Приём по 8 бит
+		 (1<<UCSZ1)| // Приём по 8 бит
 		 (1<<URSEL)
 	);
 
@@ -56,10 +56,11 @@ void USART_START()
 {
 	UCSRB=
 	(
-		(1<<TXEN) |
-		(1<<RXEN) |
-		(0<<TXCIE)|
-		(0<<RXCIE)
+		(1<<TXEN) |   // - Writing this bit to one enables the USART Transmitter.
+		(1<<RXEN) |   // - Writing this bit to one enables the USART Receiver.
+		(0<<RXCIE)	  // - Writing this bit to one enables interrupt on the RXC Flag. A USART Receive Complete Interrupt
+					  // will be generated only if the RXCIE bit is written to one, the Global Interrupt Flag in SREG is written
+					  // to one and the RXC bit in UCSRA is set.
 	);
 }
 

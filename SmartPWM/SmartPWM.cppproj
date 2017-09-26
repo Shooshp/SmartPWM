@@ -198,6 +198,12 @@
     <Compile Include="USART\USART.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="UTILITY.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UTILITY.h">
+      <SubType>compile</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="MCP4822" />

@@ -11,8 +11,8 @@
 #define UART_RX_PIN	 PIND0
 #define UART_TX_PIN	 PIND1
 #define UART_EN_PIN	 PIND3
-#define PRT_RST_PIN  PIND6
-#define PWR_CTR_PIN	 PIND7
+#define PRT_RST_PIN  PIND6 // сброс защиты от перенапряжения 
+#define PWR_CTR_PIN	 PIND7 // отключение LM2596 по низкому уровню на этом выводе
 
 
 FILE*usart;

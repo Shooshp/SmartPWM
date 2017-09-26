@@ -3,184 +3,56 @@
 #define TRUE   1
 #define FALSE  0
 
-char buf[SIZE_RECEIVE_BUF];
-char *argv[AMOUNT_PAR];
-uint8_t argc;
+unsigned char BUFFER[SIZE_RECEIVE_BUF];
 
-uint8_t i = 0;
-uint8_t flag = 0;
+uint8_t data_count = 0;
 
-void PARS_Init(void)
+void PARSER_INIT(void)
 {
-	argc = 0;
-	argv[0] = buf;
-	flag = FALSE;
-	i = 0;
+	ADDRESS_DDR  &= ~((1<<PINB0)|(1<<PINB1)|(1<<PINB2)|(1<<PINB3));
+	ADDRESS_PORT &= ~((1<<PINB0)|(1<<PINB1)|(1<<PINB2)|(1<<PINB3));
 }
 
-void PARS_Parser(char sym)
+uint8_t GET_ADDRESS (void)
 {
-	if (sym != '\r')
+	uint8_t DEVICE_ADDRESS;
+
+	DEVICE_ADDRESS = ADDRESS_PORT & 0xF0;
+
+	return DEVICE_ADDRESS;
+}
+
+ISR (USART_RXC_vect)
+{
+	if ((data_count != 0)||(UDR == GET_ADDRESS()))
 	{
-		if (i < SIZE_RECEIVE_BUF - 1)
+		if (data_count == 0)
 		{
-			if (sym != ' ')
+			 RECIVE_FLAG = 0;
+		}
+
+		BUFFER[data_count] = UDR;
+		data_count++;
+
+		if (BUFFER[data_count] == '\n')
+		{
+			if (CHECK_CRC16(data_count)==0)
 			{
-				if (!argc)
-				{
-					argv[0] = buf;
-					argc++;
-				}
-				
-				if (flag)
-				{
-					if (argc < AMOUNT_PAR)
-					{
-						argv[argc] = &buf[i];
-						argc++;
-					}
-					flag = FALSE;
-				}
-				
-				buf[i] = sym;
-				i++;
-			}
-			else
-			{
-				if (!flag)
-				{
-					buf[i] = 0;
-					i++;
-					flag = TRUE;
-				}
+				 RECIVE_FLAG = 1;
 			}
 		}
-		buf[i] = 0;
-		return;
-	}
-	else
-	{
-		buf[i] = 0;
-
-		if (argc)
-		{
-			PARS_Handler(argc, argv);
-		}
-		else
-		{
-			//сюда можно что-то добавить
-		}
-		
-		argc = 0;
-		flag = FALSE;
-		i = 0;
-	}
+	} 	
 }
 
-#ifdef  __GNUC__
-
-uint8_t PARS_EqualStrFl(char *s1, char const *s2)
+uint16_t CHECK_CRC16 (uint8_t DATA_SIZE)
 {
-	uint8_t i = 0;
-	
-	while(s1[i] == pgm_read_byte(&s2[i]) && s1[i] != '\0' && pgm_read_byte(&s2[i]) != '\0')
-	{
-		i++;
-	}
-	
-	if (s1[i] =='\0' && pgm_read_byte(&s2[i]) == '\0')
-	{
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
-}
+	uint8_t counter;
+	uint16_t CRC = 0xFFFF;
 
-#else
+	for (counter = 0; counter < DATA_SIZE; counter++)
+	{
+		CRC = _crc16_update(CRC, BUFFER[counter]);
+	}
 
-uint8_t PARS_EqualStrFl(char *s1, char __flash *s2)
-{
-	uint8_t i = 0;
-	
-	while(s1[i] == s2[i] && s1[i] != '\0' && s2[i] != '\0')
-	{
-		i++;
-	}
-	
-	if (s1[i] =='\0' && s2[i] == '\0')
-	{
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
-}
-
-#endif
-
-
-uint8_t PARS_EqualStr(char *s1, char *s2)
-{
-	uint8_t i = 0;
-	
-	while(s1[i] == s2[i] && s1[i] != '\0' && s2[i] != '\0')
-	{
-		i++;
-	}
-	
-	if (s1[i] =='\0' && s2[i] == '\0')
-	{
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
-}
-
-uint8_t PARS_StrToUchar(char *s)
-{
-	uint8_t value = 0;
-	
-	while(*s == '0')
-	{
-		s++;
-	}
-	
-	while(*s)
-	{
-		value += (*s - 0x30);
-		s++;
-		if (*s)
-		{
-			value *= 10;
-		}
-	};
-	
-	return value;
-}
-
-uint16_t PARS_StrToUint(char *s)
-{
-	uint16_t value = 0;
-	
-	while(*s == '0')
-	{
-		s++;
-	}
-	
-	while(*s)
-	{
-		value += (*s - 0x30);
-		s++;
-		if (*s)
-		{
-			value *= 10;
-		}
-	};
-	
-	return value;
+	return CRC;
 }

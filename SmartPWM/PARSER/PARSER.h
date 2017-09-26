@@ -1,34 +1,23 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <stdint.h>
-
-#ifdef __GNUC__
-#include <avr/pgmspace.h>
-#endif
+#include <util/crc16.h>
+#include <avr/io.h>
 
 /*вместимость приемного буфера*/
-#define SIZE_RECEIVE_BUF  32
+#define SIZE_RECEIVE_BUF  128
 
-/*количество токенов*/
-#define AMOUNT_PAR 5
+#define ADDRESS_PORT  PORTC
+#define ADDRESS_DDR   DDRC
+
+#define CRC_CONSTANT  0xA001
+
+extern  char RECIVE_FLAG;
 
 /*функции парсера*/
-void PARS_Init(void);
-void PARS_Parser(char sym);
+void PARSER_INIT(void);
+uint8_t GET_ADDRESS(void);
+uint16_t CHECK_CRC16 (uint8_t DATA_SIZE);
 
-/*обработчик полученной строки. он определяется в другом месте*/
-extern void PARS_Handler(uint8_t argc, char *argv[]);
-
-/*дополнительные функции для работы со строками*/
-uint8_t  PARS_EqualStr(char *s1, char *s2);
-uint8_t  PARS_StrToUchar(char *s);
-uint16_t PARS_StrToUint(char *s);
-
-#ifdef __GNUC__
-uint8_t PARS_EqualStrFl(char *s1, char const *s2);
-#else
-uint8_t PARS_EqualStrFl(char *s1, char __flash *s2);
-#endif
 
 #endif //PARSER_H
