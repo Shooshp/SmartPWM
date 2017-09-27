@@ -1,7 +1,6 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <util/crc16.h>
 #include <avr/io.h>
 
 /*вместимость приемного буфера*/

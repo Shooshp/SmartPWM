@@ -58,7 +58,7 @@ void USART_START()
 	(
 		(1<<TXEN) |   // - Writing this bit to one enables the USART Transmitter.
 		(1<<RXEN) |   // - Writing this bit to one enables the USART Receiver.
-		(0<<RXCIE)	  // - Writing this bit to one enables interrupt on the RXC Flag. A USART Receive Complete Interrupt
+		(1<<RXCIE)	  // - Writing this bit to one enables interrupt on the RXC Flag. A USART Receive Complete Interrupt
 					  // will be generated only if the RXCIE bit is written to one, the Global Interrupt Flag in SREG is written
 					  // to one and the RXC bit in UCSRA is set.
 	);
@@ -70,7 +70,7 @@ void USART_STOP()
 	~(
 		(1<<TXEN)|
 		(1<<RXEN)|
-		(0<<RXCIE)
+		(1<<RXCIE)
 	);
 }
 
