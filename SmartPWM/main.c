@@ -1,5 +1,8 @@
 #define	F_CPU (16000000UL)
 
+#define  POWER_SOURCE_PREFIX 0xA0
+
+#include <string.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -12,11 +15,14 @@
 #include "USART/USART.h"
 #include "PARSER/PARSER.h"
 
+PROGMEM const char string_address[]="Address:";
+
 unsigned char BUFFER[SIZE_RECEIVE_BUF];
-volatile unsigned char COMMAND[32];
-volatile int ARGUMENT;
+unsigned char COMMAND[32];
+int ARGUMENT;
 char RECIVE_FLAG;
-uint8_t data_count = 0;
+uint8_t data_count_buffer = 0;
+uint8_t data_count_command = 0;
 
 int main(void)
 {
@@ -54,24 +60,31 @@ int main(void)
 
 ISR (USART_RXC_vect)
 {
-	if ((data_count != 0)||(UDR == GET_ADDRESS()))
-	{
-		if (data_count == 0)
-		{
+		if (data_count_buffer == 0)		
 			RECIVE_FLAG = 0;
+		
+
+		BUFFER[data_count_buffer] = UDR;
+		COMMAND[data_count_command]= UDR;		
+
+		if (PARS_EqualStrFl(BUFFER,string_address)==1)
+		{
+			GET_ADDRESS();
 		}
 
-		BUFFER[data_count] = UDR;
-		data_count++;
+		data_count_buffer++;
+		data_count_command++;
 
-		if (BUFFER[data_count] == '\n')
+		if (BUFFER[data_count_buffer] == '\n')
 		{
-			if (CHECK_CRC16(data_count)==0)
+			if (CHECK_CRC16(data_count_buffer)==0)
 			{
 				RECIVE_FLAG = 1;
 			}
+
+			data_count_buffer=0;
 		}
-	}
+	
 }
 
 uint16_t CHECK_CRC16 (uint8_t DATA_SIZE)
@@ -91,7 +104,7 @@ uint8_t GET_ADDRESS (void)
 {
 	uint8_t DEVICE_ADDRESS;
 
-	DEVICE_ADDRESS = ADDRESS_PORT & 0xF0;
+	DEVICE_ADDRESS = (ADDRESS_PIN & 0xF)|POWER_SOURCE_PREFIX;
 
 	return DEVICE_ADDRESS;
 }
