@@ -16,7 +16,7 @@ unsigned char ARGUMENT[SIZE_RECEIVE_BUF-4];
 unsigned char BUFFER[SIZE_RECEIVE_BUF];
 unsigned char RECEIVING_TRANSMISSION = 0;
 unsigned char DATA_RECEIVED = 0;
-uint8_t data_count_buffer = 0;
+uint8_t DATA_BUFFER_COUNT = 0;
 
 int main(void)
 {
@@ -90,11 +90,11 @@ ISR (USART_RXC_vect)
 	{
 		RECEIVING_TRANSMISSION = 1; // Set up for receiving
 		DATA_RECEIVED = 0;          // Just in case clean receive completed flag
-		data_count_buffer = 0;      // Reset byte counter
+		DATA_BUFFER_COUNT = 0;      // Reset byte counter
 	}
 	
 	// If transmission length exceeded maximum buffer size than in must be something went wrong, reset transmission.
-	if (data_count_buffer > SIZE_RECEIVE_BUF)
+	if (DATA_BUFFER_COUNT > SIZE_RECEIVE_BUF)
 	{
 		RECEIVING_TRANSMISSION = 0;
 	} 
@@ -103,13 +103,13 @@ ISR (USART_RXC_vect)
 		// If it's not the end of transmission
 		if (RECEIVE_LOW_BYTE != '\n')
 		{
-			BUFFER[data_count_buffer] = RECEIVE_LOW_BYTE;
-			data_count_buffer++;
+			BUFFER[DATA_BUFFER_COUNT] = RECEIVE_LOW_BYTE;
+			DATA_BUFFER_COUNT++;
 		} 
 		else
 		{
 			// CRC Check was successful
-			if (CHECK_CRC16(data_count_buffer) == 0)
+			if (CHECK_CRC16(DATA_BUFFER_COUNT) == 0)
 			{
 				COMMAND         = BUFFER[1];
 				ARGUMENT_LENGHT = BUFFER[2];
@@ -128,7 +128,7 @@ ISR (USART_RXC_vect)
 				DATA_RECEIVED = 0;          // Just in case clean receive completed flag				
 			}
 			RECEIVING_TRANSMISSION = 0; // Set up for receiving
-			data_count_buffer = 0;      // Reset byte counter
+			DATA_BUFFER_COUNT = 0;      // Reset byte counter
 		}		
 	}
 }
