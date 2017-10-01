@@ -45,14 +45,14 @@ uint16_t ADC_GET_VALUE(uint8_t CHANEL)
 	return DATA;
 }
 
-int GET_VOLTAGE(void)
+uint16_t GET_VOLTAGE(void)
 {
-	int VALUE = ADC_GET_VALUE(3) * 8;
+	uint16_t VALUE = ADC_GET_VALUE(3) * 8;
 	return VALUE;
 }
 
-int GET_CURRENT(void)
+uint16_t GET_CURRENT(void)
 {
-	int VALUE = ADC_GET_VALUE(2) * 2;
+	uint16_t VALUE = ADC_GET_VALUE(2) * 2;
 	return VALUE;
 }

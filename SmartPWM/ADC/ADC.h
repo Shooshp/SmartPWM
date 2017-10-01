@@ -11,8 +11,8 @@
 
 void ADC_INIT (void);
 uint16_t ADC_GET_VALUE(uint8_t CHANEL);
-int GET_VOLTAGE(void);
-int GET_CURRENT(void);
+uint16_t GET_VOLTAGE(void);
+uint16_t GET_CURRENT(void);
 int ADC_CALIBRATION(void);
 
 

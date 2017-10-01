@@ -3,7 +3,6 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
-#include <stdio.h>
 
 #define UART_PORT	PORTD
 #define UART_DDR	DDRD
@@ -14,12 +13,13 @@
 #define PRT_RST_PIN  PIND6 // сброс защиты от перенапряжения 
 #define PWR_CTR_PIN	 PIND7 // отключение LM2596 по низкому уровню на этом выводе
 
-
-FILE*usart;
+#define ADDRESS_PORT  PORTB
+#define ADDRESS_DDR   DDRB
+#define ADDRESS_PIN   PINB
 
 void UASRT_INIT(void);
-int  USART_PUTCHAR(char data);
-int  USART_GETCHAR();
+char USART_PUTCHAR(char data);
+char USART_GETCHAR();
 void USART_START(void);
 void USART_STOP(void);
 void RS485_READ(void);
