@@ -90,7 +90,7 @@ ISR (USART_RXC_vect)
 	}
 	
 	// If transmission length exceeded maximum buffer size than in must be something went wrong, reset transmission.
-	if (data_count_buffer < SIZE_RECEIVE_BUF)
+	if (data_count_buffer > SIZE_RECEIVE_BUF)
 	{
 		RECEIVING_TRANSMISSION = 0;
 	} 
