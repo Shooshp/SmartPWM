@@ -43,19 +43,23 @@ int main(void)
 	);
 	*/
 
-	sei();
+	sei(); // Enable global interrupts
 	
     while (1) 
     {	
 		if (DATA_RECEIVED)
 		{
+			cli(); // Disable all global interrupts while working on command
+			
 			switch(COMMAND)
 			{
+				//TODO: need to prewrite basic commands and replays such as WhoIs? and Status
 				case 0x1:
 				break;				
 			}
 									
 			DATA_RECEIVED = 0;
+			sei(); // Enable global interrupts
 		}
     }
 }
@@ -116,6 +120,7 @@ ISR (USART_RXC_vect)
 				}
 				
 				DATA_RECEIVED = 1;          // Set flag to signal main routine			
+				//TODO: need to make reply function and use it here to signal RPi that receive was successful
 			}
 			else
 			{
