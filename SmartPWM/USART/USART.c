@@ -27,14 +27,9 @@ void UASRT_INIT()
 	UCSRC=
 	(
 		 (0<<USBS) | // Один стоповый бит
-		 (1<<UCSZ0)| // Receive 9 bits
-		 (1<<UCSZ1)| // Receive 9 bits
+		 (1<<UCSZ0)| // Receive 8 bits
+		 (1<<UCSZ1)| // Receive 8 bits
 		 (1<<URSEL)
-	);
-	
-	UCSRB |=
-	(
-		(1<<UCSZ2)  // Receive 9 bits
 	);
 	
 	ADDRESS_DDR  &= ~((1<<PINB0)|(1<<PINB1)|(1<<PINB2)|(1<<PINB3));
@@ -78,13 +73,13 @@ void USART_STOP()
 
 void RS485_READ(void)
 {
-	_delay_ms(10);
+	_delay_us(10);
 	UART_PORT &= ~(1 << UART_EN_PIN);	
 }
 
 void RS485_WRITE(void)
 {
-	UART_PORT |=  (1 << UART_EN_PIN);
-	_delay_ms(10);
+	_delay_us(10);
+	UART_PORT |=  (1 << UART_EN_PIN);	
 }
 
