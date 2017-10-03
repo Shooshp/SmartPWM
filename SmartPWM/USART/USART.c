@@ -22,7 +22,7 @@ void UASRT_INIT()
 	UART_DDR &=~(1<<UART_RX_PIN);
 
 	UBRRH=0x00;
-	UBRRL=0x67;		//ƒл€ внутренних 16 ћ√ц часов это 9600
+	UBRRL=0x00;		//ƒл€ внутренних 16 ћ√ц часов это 1 Mhz
 
 	UCSRC=
 	(
@@ -73,13 +73,13 @@ void USART_STOP()
 
 void RS485_READ(void)
 {
-	_delay_ms(15);
+	_delay_ms(1);
 	UART_PORT &= ~(1 << UART_EN_PIN);	
 }
 
 void RS485_WRITE(void)
 {
 	UART_PORT |=  (1 << UART_EN_PIN);	
-	_delay_ms(15);
+	_delay_ms(1);
 }
 
