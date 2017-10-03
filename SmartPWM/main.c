@@ -52,12 +52,12 @@ int main(void)
 		{
 			cli(); // Disable all global interrupts while working on command
 			
-			switch(COMMAND)
+			/*switch(COMMAND)
 			{
 				//TODO: need to prewrite basic commands and replays such as WhoIs? and Status
 				case 0x1:
 				break;				
-			}
+			}*/
 									
 			DATA_RECEIVED = 0;
 			sei(); // Enable global interrupts
@@ -91,10 +91,10 @@ void SEND_ACKNOWLEDGE (void)
 	BUFFER[1] = BUFFER[DATA_BUFFER_COUNT-2]; // First CRC16 Byte
 	BUFFER[2] = BUFFER[DATA_BUFFER_COUNT-1]; // Second CRC16 Byte
 
-	RS485_WRITE();
+	RS485_WRITE();	
 	for(uint8_t SEND_BYTE_COUNT = 0; SEND_BYTE_COUNT<3; SEND_BYTE_COUNT++)
 	{
-		USART_PUTCHAR(BUFFER[SEND_BYTE_COUNT]);
+		while(USART_PUTCHAR(BUFFER[SEND_BYTE_COUNT]));
 	}
 	RS485_READ();
 }
@@ -111,11 +111,14 @@ ISR (USART_RXC_vect)
 		RECEIVING_TRANSMISSION = 1; // Set up for receiving
 		DATA_RECEIVED = 0;          // Just in case clean receive completed flag
 		DATA_BUFFER_COUNT = 0;      // Reset byte counter
-		MAX_LENGHT = 4;             // By that byte we should get data lenght
+		MAX_LENGHT = 4;             // By that byte we should get data length
 	}
 	
 	if (RECEIVING_TRANSMISSION)
 	{
+		BUFFER[DATA_BUFFER_COUNT] = RECEIVE_BYTE;
+		DATA_BUFFER_COUNT++;
+
 		// If transmission length exceeded maximum buffer size 
 		// than in must be something went wrong, reset transmission.
 		if (DATA_BUFFER_COUNT > SIZE_RECEIVE_BUF)
@@ -131,12 +134,7 @@ ISR (USART_RXC_vect)
 				MAX_LENGHT = RECEIVE_BYTE + 5; 
 			}
 			// If it's not the end of transmission
-			if (DATA_BUFFER_COUNT < MAX_LENGHT)
-			{
-				BUFFER[DATA_BUFFER_COUNT] = RECEIVE_BYTE;
-				DATA_BUFFER_COUNT++;
-			} 
-			else
+			if (DATA_BUFFER_COUNT > MAX_LENGHT)
 			{
 				// CRC Check was successful
 				if (CHECK_CRC16())
@@ -157,6 +155,7 @@ ISR (USART_RXC_vect)
 					// There was some errors in transmission so lets try again				
 					DATA_RECEIVED = 0;          // Just in case clean receive completed flag				
 				}
+
 				RECEIVING_TRANSMISSION = 0; // Set up for receiving
 				DATA_BUFFER_COUNT = 0;      // Reset byte counter
 			}		
