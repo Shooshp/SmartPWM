@@ -1,4 +1,3 @@
-#include <string.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/crc16.h>
@@ -18,6 +17,19 @@ unsigned char RECEIVING_TRANSMISSION = 0;
 unsigned char DATA_RECEIVED = 0;
 unsigned char MAX_LENGHT = 0;
 uint8_t DATA_BUFFER_COUNT = 0;
+
+uint8_t *REGISTER_MAP = (void*)0x20;
+
+void REGISTER_WRITE(uint16_t address, uint8_t data)
+{
+	REGISTER_MAP[address] = data;
+}
+
+uint8_t REGISTER_READ(uint16_t address)
+{
+	uint8_t data = REGISTER_MAP[address];
+	return data;
+}
 
 int main(void)
 {
@@ -51,13 +63,20 @@ int main(void)
 		if (DATA_RECEIVED)
 		{
 			cli(); // Disable all global interrupts while working on command
+			uint16_t ADDRESS = ARGUMENT[1] | (ARGUMENT[0]<<8);
+			uint8_t DATA = ARGUMENT[2];
 			
-			/*switch(COMMAND)
+			switch(COMMAND)
 			{
 				//TODO: need to prewrite basic commands and replays such as WhoIs? and Status
-				case 0x1:
-				break;				
-			}*/
+				case 20:
+					REGISTER_WRITE(ADDRESS, DATA);			
+				break;	
+
+				case 21:
+					BUFFER[0] = REGISTER_READ(ADDRESS);
+				break;							
+			}
 									
 			DATA_RECEIVED = 0;
 			sei(); // Enable global interrupts
@@ -101,10 +120,8 @@ void SEND_ACKNOWLEDGE (void)
 
 ISR (USART_RXC_vect)
 {
-	unsigned char RECEIVE_BYTE;
+	unsigned char RECEIVE_BYTE = USART_GETCHAR();
 	 
-	RECEIVE_BYTE = USART_GETCHAR();
-	
 	// Transmission was not established, received flag bit and address matches our own
 	if ((RECEIVING_TRANSMISSION == 0)&&(RECEIVE_BYTE == GET_ADDRESS()))
 	{
@@ -127,14 +144,14 @@ ISR (USART_RXC_vect)
 		} 
 		else
 		{
-			if (DATA_BUFFER_COUNT == 2)
+			if (DATA_BUFFER_COUNT == 3)
 			{
 				// Full packet length = address[1] + command[1] + length[1] +
 				// + data[length] + CRC[2] = length + 5
 				MAX_LENGHT = RECEIVE_BYTE + 5; 
 			}
 			// If it's not the end of transmission
-			if (DATA_BUFFER_COUNT > MAX_LENGHT)
+			if (DATA_BUFFER_COUNT == MAX_LENGHT)
 			{
 				// CRC Check was successful
 				if (CHECK_CRC16())
