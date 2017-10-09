@@ -13,6 +13,7 @@ unsigned char ARGUMENT_LENGHT = 0;
 unsigned char ARGUMENT[SIZE_RECEIVE_BUF-4];
 
 unsigned char BUFFER[SIZE_RECEIVE_BUF];
+unsigned char CRC[2];
 unsigned char RECEIVING_TRANSMISSION = 0;
 unsigned char DATA_RECEIVED = 0;
 unsigned char MAX_LENGHT = 0;
@@ -29,6 +30,31 @@ uint8_t REGISTER_READ(uint16_t address)
 {
 	uint8_t data = REGISTER_MAP[address];
 	return data;
+}
+
+void REGISTER_SET(uint16_t address, uint8_t data)
+{
+	REGISTER_MAP[address] |= data;
+}
+
+void REGISTER_CLEAR(uint16_t address, uint8_t data)
+{
+	REGISTER_MAP[address] &= ~data;
+} 
+
+void SEND_REPLY (uint8_t VALUE)
+{
+	BUFFER[0] = GET_ADDRESS();	// Our own address
+	BUFFER[1] = VALUE;			// Reply
+	BUFFER[2] = CRC[1];			// First CRC16 Byte
+	BUFFER[3] = CRC[0];			// Second CRC16 Byte
+
+	RS485_WRITE();
+	for(uint8_t SEND_BYTE_COUNT = 0; SEND_BYTE_COUNT<4; SEND_BYTE_COUNT++)
+	{
+		while(USART_PUTCHAR(BUFFER[SEND_BYTE_COUNT]));
+	}
+	RS485_READ();
 }
 
 int main(void)
@@ -68,13 +94,21 @@ int main(void)
 			
 			switch(COMMAND)
 			{
-				//TODO: need to prewrite basic commands and replays such as WhoIs? and Status
-				case 20:
+				case 1: // Register write
 					REGISTER_WRITE(ADDRESS, DATA);			
 				break;	
 
-				case 21:
-					BUFFER[0] = REGISTER_READ(ADDRESS);
+				case 2:	// Register read				
+					_delay_ms(1);
+					SEND_REPLY(REGISTER_READ(ADDRESS));
+				break;
+				
+				case 3:
+					REGISTER_SET(ADDRESS, DATA);
+				break;
+				
+				case 4:
+					REGISTER_CLEAR(ADDRESS,DATA);
 				break;							
 			}
 									
@@ -87,7 +121,7 @@ int main(void)
 uint8_t CHECK_CRC16 (void)
 {
 	uint16_t CRC_CALC = 0x0;
-	uint16_t CRC_GET = (BUFFER[DATA_BUFFER_COUNT-1])|(BUFFER[DATA_BUFFER_COUNT-2]<<8);
+	uint16_t CRC_GET = (CRC[0])|(CRC[1]<<8);
 
 	for (uint8_t counter = 0; counter < (DATA_BUFFER_COUNT - 2); counter++)
 	{
@@ -106,9 +140,9 @@ uint8_t CHECK_CRC16 (void)
 
 void SEND_ACKNOWLEDGE (void)
 {
-	BUFFER[0] = GET_ADDRESS();				 // Our own address
-	BUFFER[1] = BUFFER[DATA_BUFFER_COUNT-2]; // First CRC16 Byte
-	BUFFER[2] = BUFFER[DATA_BUFFER_COUNT-1]; // Second CRC16 Byte
+	BUFFER[0] = GET_ADDRESS();	// Our own address
+	BUFFER[1] = CRC[1]; // First CRC16 Byte
+	BUFFER[2] = CRC[0]; // Second CRC16 Byte
 
 	RS485_WRITE();	
 	for(uint8_t SEND_BYTE_COUNT = 0; SEND_BYTE_COUNT<3; SEND_BYTE_COUNT++)
@@ -129,6 +163,7 @@ ISR (USART_RXC_vect)
 		DATA_RECEIVED = 0;          // Just in case clean receive completed flag
 		DATA_BUFFER_COUNT = 0;      // Reset byte counter
 		MAX_LENGHT = 4;             // By that byte we should get data length
+		CRC[0] = 0;	CRC[1] = 0;		// Clean up received CRC value		
 	}
 	
 	if (RECEIVING_TRANSMISSION)
@@ -152,7 +187,10 @@ ISR (USART_RXC_vect)
 			}
 			// If it's not the end of transmission
 			if (DATA_BUFFER_COUNT == MAX_LENGHT)
-			{
+			{	
+				// Put CRC value in local buffer for further use in SEND_ACKNOWLEDGE and SEND_REPLY
+				CRC[0] = BUFFER[DATA_BUFFER_COUNT-1];
+				CRC[1] = BUFFER[DATA_BUFFER_COUNT-2];
 				// CRC Check was successful
 				if (CHECK_CRC16())
 				{
@@ -175,6 +213,7 @@ ISR (USART_RXC_vect)
 
 				RECEIVING_TRANSMISSION = 0; // Set up for receiving
 				DATA_BUFFER_COUNT = 0;      // Reset byte counter
+				DATA_BUFFER_COUNT = 1;
 			}		
 		}
 	}
