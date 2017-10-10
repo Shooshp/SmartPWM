@@ -1,12 +1,15 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/crc16.h>
+#include <avr/eeprom.h>
 
 #include "SPI/SPI.h"
 #include "MCP4822/MCP4822.h"
 #include "ADC/ADC.h"
 #include "USART/USART.h"
 #include "UTILITY.h"
+
+uint8_t DEVICE_ID[16] EEMEM;
 
 unsigned char COMMAND = 0;
 unsigned char ARGUMENT_LENGHT = 0;
@@ -40,7 +43,18 @@ void REGISTER_SET(uint16_t address, uint8_t data)
 void REGISTER_CLEAR(uint16_t address, uint8_t data)
 {
 	REGISTER_MAP[address] &= ~data;
+}
+
+void ID_WRITE(uint16_t address, uint8_t data)
+{
+	eeprom_write_byte(&DEVICE_ID[address], data);
 } 
+
+uint8_t ID_READ(uint16_t address)
+{
+	uint8_t data = eeprom_read_byte(&DEVICE_ID[address]);
+	return data;
+}
 
 void SEND_REPLY (uint8_t VALUE)
 {
@@ -109,6 +123,14 @@ int main(void)
 				
 				case 4:
 					REGISTER_CLEAR(ADDRESS,DATA);
+				break;
+				
+				case 5:
+					SEND_REPLY(ID_READ(ADDRESS));
+				break;
+				
+				case 6:
+					ID_WRITE(ADDRESS,DATA);
 				break;							
 			}
 									
